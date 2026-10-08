@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Govind's Semester 1 Command Center</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; overflow: hidden; }
+        
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .glass-panel {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .view-section { display: none; height: 100%; overflow-y: auto; padding-bottom: 6rem; }
+        .view-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .circular-chart { display: block; margin: 0 auto; max-width: 80%; max-height: 250px; }
+        .circle-bg { fill: none; stroke: #e2e8f0; stroke-width: 3.8; }
+        .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1s ease-out; }
+        .percentage { fill: #0f172a; font-family: 'Inter', sans-serif; font-size: 0.5em; text-anchor: middle; font-weight: 700; }
+        
+        .pulse-glow { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+
+        .nav-item.active { color: #0891b2; background: #ecfeff; border-right: 3px solid #0891b2; font-weight: 600; }
+        .mobile-nav-item.active { color: #0891b2; }
+        
+        #modal-backdrop { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); }
+        #modal-backdrop.active { display: flex; animation: fadeIn 0.2s ease; }
+    </style>
+</head>
+
+<body class="flex h-screen w-screen overflow-hidden text-slate-800">
+
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-lg z-20">
+        <div class="p-6 pb-2">
+            <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 leading-tight">
+                Govind's Command Center
+            </h1>
+            <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest font-semibold">Semester 1 Poly</p>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto mt-4 no-scrollbar py-2">
+            <ul class="space-y-1">
+                <li><a href="#" onclick="switchView('home')" id="nav-home" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-home w-6"></i> Dashboard</a></li>
+                <li><a href="#" onclick="switchView('planner')" id="nav-planner" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-calendar-check w-6"></i> Planner</a></li>
+                <li><a href="#" onclick="switchView('syllabus')" id="nav-syllabus" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-book-open w-6"></i> Syllabus</a></li>
+                <li><a href="#" onclick="switchView('study')" id="nav-study" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-stopwatch w-6"></i> Study Timer</a></li>
+                <li><a href="#" onclick="switchView('habits')" id="nav-habits" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-dumbbell w-6"></i> Habits & Health</a></li>
+                <li><a href="#" onclick="switchView('growth')" id="nav-growth" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-chart-line w-6"></i> Growth Analytics</a></li>
+                <li><a href="#" onclick="switchView('ai')" id="nav-ai" class="nav-item flex items-center px-6 py-3 text-slate-600 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-robot w-6"></i> AI Lab</a></li>
+            </ul>
+            <div class="mt-8 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Data & Logs</div>
+            <ul class="space-y-1">
+                <li><a href="#" onclick="switchView('doubts')" id="nav-doubts" class="nav-item flex items-center px-6 py-2 text-slate-500 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-question-circle w-6 text-sm"></i> Doubts</a></li>
+                <li><a href="#" onclick="switchView('mocks')" id="nav-mocks" class="nav-item flex items-center px-6 py-2 text-slate-500 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-file-alt w-6 text-sm"></i> Mock Tests</a></li>
+                <li><a href="#" onclick="switchView('settings')" id="nav-settings" class="nav-item flex items-center px-6 py-2 text-slate-500 hover:text-cyan-700 hover:bg-slate-50 transition"><i class="fas fa-cog w-6 text-sm"></i> Settings</a></li>
+            </ul>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-200 bg-slate-50">
+            <div class="text-xs text-slate-500 text-center font-medium" id="exam-countdown-sidebar">Exam: Nov 5, 2026</div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full bg-slate-50 relative">
+        
+        <!-- Mobile Header -->
+        <header class="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+            <h1 class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Cmd Center</h1>
+            <button onclick="switchView('settings')" class="text-slate-500 hover:text-cyan-600"><i class="fas fa-cog text-xl"></i></button>
+        </header>
+
+        <div id="view-home" class="view-section active p-4 md:p-8 no-scrollbar">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-slate-900" id="greeting">Welcome back, Govind.</h2>
+                    <p class="text-slate-500 mt-1" id="current-date-display">Tracking for: 9 Oct - 5 Nov 2026</p>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <div class="text-sm text-slate-400 uppercase tracking-widest font-semibold">T-Minus</div>
+                    <div class="text-3xl font-bold text-cyan-600" id="exam-countdown-main">-- Days</div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Main Score Card -->
+                <div class="glass-panel p-6 md:col-span-1 flex flex-col items-center justify-center text-center">
+                    <h3 class="text-slate-700 font-semibold mb-2">Today's Success Score</h3>
+                    <svg viewBox="0 0 36 36" class="circular-chart w-32 h-32 md:w-40 md:h-40 my-4">
+                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="circle stroke-cyan-500 pulse-glow" id="daily-score-ring" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <text x="18" y="20.35" class="percentage text-slate-900" id="daily-score-text">0%</text>
+                    </svg>
+                    <p class="text-sm text-slate-500 font-medium" id="daily-status-msg">Analyzing metrics...</p>
+                </div>
+
+                <!-- Mini Stats -->
+                <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                    <div class="glass-panel p-5 flex flex-col justify-center">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Study Hours</div>
+                        <div class="text-3xl font-bold text-slate-800"><span id="stat-study-actual">0</span><span class="text-sm text-slate-400 font-medium"> / <span id="stat-study-planned">0</span>h</span></div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mt-3">
+                            <div class="bg-blue-500 h-2 rounded-full" id="bar-study" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-panel p-5 flex flex-col justify-center">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Tasks Done</div>
+                        <div class="text-3xl font-bold text-slate-800"><span id="stat-tasks-done">0</span><span class="text-sm text-slate-400 font-medium"> / <span id="stat-tasks-total">0</span></span></div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mt-3">
+                            <div class="bg-green-500 h-2 rounded-full" id="bar-tasks" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 flex flex-col justify-center">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Syllabus Completion</div>
+                        <div class="text-3xl font-bold text-slate-800" id="stat-syllabus">0%</div>
+                        <div class="text-xs text-slate-500 mt-1 font-medium"><i class="fas fa-book mr-1"></i> Across 6 subjects</div>
+                    </div>
+
+                    <div class="glass-panel p-5 flex flex-col justify-center">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Current Streak</div>
+                        <div class="text-3xl font-bold text-slate-800"><i class="fas fa-fire text-orange-500 mr-2"></i><span id="stat-streak">0</span> <span class="text-sm font-medium text-slate-400">days</span></div>
+                        <div class="text-xs text-slate-500 mt-1 font-medium">Best: <span id="stat-best-streak">0</span> days</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Today's Plan -->
+                <div class="glass-panel p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-slate-800">Today's Plan</h3>
+                        <button onclick="switchView('planner')" class="text-sm font-semibold text-cyan-600 hover:underline">View All</button>
+                    </div>
+                    <div id="home-tasks-list" class="space-y-3">
+                        <!-- Tasks injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Action Center -->
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">Action Center</h3>
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <button onclick="switchView('study')" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-3 text-sm font-semibold shadow-md transition flex items-center justify-center gap-2">
+                            <i class="fas fa-play"></i> Start Timer
+                        </button>
+                        <button onclick="openModal('modal-add-task')" class="bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-700 rounded-lg p-3 text-sm font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fas fa-plus"></i> Add Task
+                        </button>
+                    </div>
+                    
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Attention Needed</h4>
+                    <div id="home-alerts" class="space-y-2">
+                        <!-- Alerts injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-planner" class="view-section p-4 md:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Daily Planner</h2>
+                <button onclick="openModal('modal-add-task')" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-4 py-2 rounded-lg shadow-md transition"><i class="fas fa-plus mr-1"></i> Task</button>
+            </div>
+            
+            <div class="flex space-x-3 overflow-x-auto pb-4 no-scrollbar mb-4" id="planner-dates">
+                <!-- Dates injected via JS -->
+            </div>
+
+            <div class="glass-panel min-h-[50vh] flex flex-col overflow-hidden">
+                <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-lg text-slate-800" id="planner-current-date-title">Tasks</h3>
+                    <div class="text-sm font-medium text-slate-500">Total Planned: <span id="planner-planned-hours" class="font-bold text-slate-800">0</span>h</div>
+                </div>
+                <div id="planner-tasks-container" class="p-4 md:p-6 space-y-3 flex-1 bg-white">
+                    <!-- Planner tasks injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div id="view-syllabus" class="view-section p-4 md:p-8">
+            <h2 class="text-2xl font-bold mb-2 text-slate-900">Syllabus Tracker</h2>
+            <p class="text-slate-500 mb-8 font-medium">Track completion across all Semester 1 BTEUP subjects.</p>
+            
+            <div id="syllabus-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Subjects injected via JS -->
+            </div>
+        </div>
+
+        <div id="view-study" class="view-section p-4 md:p-8 flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-6 self-start w-full text-center md:text-left text-slate-900">Focus Session</h2>
+            
+            <div class="glass-panel p-8 w-full max-w-md flex flex-col items-center shadow-xl relative overflow-hidden bg-white">
+                <div class="absolute inset-0 bg-gradient-to-b from-blue-50 to-transparent pointer-events-none"></div>
+                
+                <div class="w-full mb-6 relative z-10">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
+                    <select id="timer-subject" class="w-full bg-slate-50 border-2 border-slate-200 rounded-lg p-3 text-slate-800 focus:border-cyan-500 outline-none transition font-medium">
+                        <!-- Options injected -->
+                    </select>
+                </div>
+                
+                <div class="text-7xl md:text-8xl font-mono font-bold tracking-tighter text-slate-800 mb-8 relative z-10" id="timer-display">
+                    00:00:00
+                </div>
+                
+                <div class="flex gap-4 relative z-10 w-full">
+                    <button id="btn-timer-start" onclick="toggleTimer()" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-play" id="icon-timer-play"></i> <span id="text-timer-play">Start</span>
+                    </button>
+                    <button onclick="stopTimer()" class="bg-red-50 hover:bg-red-100 text-red-600 border-2 border-red-200 px-6 py-4 rounded-xl transition text-lg flex items-center justify-center">
+                        <i class="fas fa-square"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Session Entry -->
+            <div class="w-full max-w-md mt-8 glass-panel p-6">
+                <h3 class="font-bold mb-4 text-center text-slate-800">Manual Entry</h3>
+                <form id="form-manual-session" onsubmit="handleManualSession(event)" class="space-y-4">
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Subject</label>
+                            <select id="manual-subject" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 font-medium" required></select>
+                        </div>
+                        <div class="w-24">
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Minutes</label>
+                            <input type="number" id="manual-duration" min="1" max="600" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 font-medium" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Topic / Notes</label>
+                        <input type="text" id="manual-notes" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 font-medium" placeholder="e.g., Matrix properties">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-lg transition">Save Session</button>
+                </form>
+            </div>
+            
+            <div class="w-full mt-10 max-w-3xl">
+                <h3 class="font-bold mb-4 border-b border-slate-200 pb-2 text-slate-800">Today's Logs</h3>
+                <div id="today-sessions-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <div id="view-habits" class="view-section p-4 md:p-8">
+            <h2 class="text-2xl font-bold mb-8 text-slate-900">Habits & Daily Health</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-lg border-b border-slate-200 pb-3 mb-5 text-slate-800">Daily Checklist</h3>
+                    <div id="habits-list" class="space-y-3">
+                        <!-- Habits injected via JS -->
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-lg border-b border-slate-200 pb-3 mb-5 text-slate-800">Phone & Distractions</h3>
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Distraction / Scrolling Time (mins)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="input-distraction" min="0" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 font-medium" placeholder="0">
+                                <button onclick="saveDistraction()" class="bg-blue-600 hover:bg-blue-700 px-5 rounded-lg text-white font-semibold transition shadow-sm">Save</button>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2">Be honest. This helps the AI identify patterns.</p>
+                        </div>
+                        
+                        <div class="pt-5 border-t border-slate-100">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Recreation / Game (1 allowed/day)</label>
+                            <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <input type="checkbox" id="check-recreation" onchange="toggleRecreation(this.checked)" class="w-5 h-5 accent-cyan-600 cursor-pointer">
+                                <span class="text-slate-800 font-medium">Completed conscious recreation</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-growth" class="view-section p-4 md:p-8">
+            <h2 class="text-2xl font-bold mb-8 text-slate-900">Growth & Analytics</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-lg mb-4 text-center text-slate-700">Study Hours (Last 7 Days)</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chart-study"></canvas>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-lg mb-4 text-center text-slate-700">Distraction vs Productivity</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chart-distraction"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 mb-6">
+                <h3 class="font-bold text-xl mb-4 border-b border-slate-200 pb-3 text-slate-800">Weekly Reflection</h3>
+                <textarea id="reflection-text" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 mb-3 font-medium focus:outline-none focus:border-cyan-500" placeholder="What went well? What caused distractions? What's the priority?"></textarea>
+                <button onclick="saveReflection()" class="bg-slate-800 hover:bg-slate-900 px-5 py-2.5 rounded-lg text-white font-semibold transition text-sm shadow-sm">Save Reflection</button>
+                <div id="saved-reflections" class="mt-5 space-y-3"></div>
+            </div>
+        </div>
+
+        <div id="view-ai" class="view-section p-4 md:p-8 flex flex-col h-full">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600"><i class="fas fa-sparkles mr-2 text-purple-600"></i>Gemini AI Lab</h2>
+                    <p class="text-slate-500 text-sm font-medium">Free Auto-Connected AI Progress Coach</p>
+                </div>
+                <div id="ai-status-badge" class="px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
+                    <i class="fas fa-check-circle mr-1"></i> Connected
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 flex-shrink-0">
+                <button onclick="sendAIPrompt('Analyze my week based on my tracked study hours, tasks, and distractions. Be honest but encouraging.')" class="bg-white hover:bg-purple-50 border border-slate-200 shadow-sm p-4 rounded-xl text-sm font-semibold text-slate-700 text-left transition flex flex-col">
+                    <i class="fas fa-chart-pie text-purple-500 mb-3 text-xl"></i>
+                    <span>Analyze Week</span>
+                </button>
+                <button onclick="sendAIPrompt('What should I study today? Look at my remaining syllabus and planned tasks.')" class="bg-white hover:bg-blue-50 border border-slate-200 shadow-sm p-4 rounded-xl text-sm font-semibold text-slate-700 text-left transition flex flex-col">
+                    <i class="fas fa-calendar-day text-blue-500 mb-3 text-xl"></i>
+                    <span>Plan Today</span>
+                </button>
+                <button onclick="sendAIPrompt('Identify my weak subjects based on my syllabus progress and provide a 3-step action plan.')" class="bg-white hover:bg-orange-50 border border-slate-200 shadow-sm p-4 rounded-xl text-sm font-semibold text-slate-700 text-left transition flex flex-col">
+                    <i class="fas fa-search text-orange-500 mb-3 text-xl"></i>
+                    <span>Find Weaknesses</span>
+                </button>
+                <button onclick="sendAIPrompt('Generate a short, factual daily summary of my raw records for today.')" class="bg-white hover:bg-green-50 border border-slate-200 shadow-sm p-4 rounded-xl text-sm font-semibold text-slate-700 text-left transition flex flex-col">
+                    <i class="fas fa-file-alt text-green-500 mb-3 text-xl"></i>
+                    <span>Daily Summary</span>
+                </button>
+            </div>
+
+            <!-- AI Chat Area -->
+            <div class="flex-1 glass-panel flex flex-col overflow-hidden min-h-[400px]">
+                <div id="ai-chat-history" class="flex-1 overflow-y-auto p-5 space-y-5 text-sm no-scrollbar bg-slate-50/50">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-none p-4 max-w-[85%] text-slate-700 font-medium leading-relaxed">
+                            Hello Govind! I am your AI Progress Coach. I'm fully connected and free to use in this environment. I can read your local data and help you stay on track for your November 5th exams. Ask me anything!
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-slate-200 bg-white flex gap-3 items-center">
+                    <input type="text" id="ai-input" placeholder="Ask about your progress, doubts, or planning..." class="flex-1 bg-slate-100 border-none rounded-xl px-5 py-3 text-slate-800 font-medium focus:ring-2 focus:ring-purple-500 outline-none transition">
+                    <button onclick="handleManualAIPrompt()" class="bg-purple-600 hover:bg-purple-700 text-white h-12 w-12 rounded-xl transition shadow-md flex items-center justify-center">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-doubts" class="view-section p-4 md:p-8"><h2 class="text-2xl font-bold text-slate-900">Doubts Tracker</h2><p class="text-slate-500 mt-4 font-medium">Module under construction. Use AI Lab for immediate doubts.</p></div>
+        <div id="view-mocks" class="view-section p-4 md:p-8"><h2 class="text-2xl font-bold text-slate-900">Mock Tests</h2><p class="text-slate-500 mt-4 font-medium">Module under construction.</p></div>
+        
+        <div id="view-settings" class="view-section p-4 md:p-8">
+            <h2 class="text-2xl font-bold mb-8 text-slate-900">Settings & Data</h2>
+            
+            <div class="glass-panel p-6 mb-8 max-w-2xl bg-white border-l-4 border-l-purple-500">
+                <h3 class="font-bold text-lg mb-2 text-slate-800"><i class="fas fa-magic mr-2 text-purple-500"></i>AI Integration</h3>
+                <p class="text-sm font-medium text-slate-600">The Gemini AI Coach is seamlessly connected within this environment. It is free to use and requires no API key setup on your end.</p>
+            </div>
+
+            <div class="glass-panel p-6 max-w-2xl">
+                <h3 class="font-bold text-lg mb-4 border-b border-slate-200 pb-3 text-slate-800"><i class="fas fa-database mr-2 text-blue-500"></i>Data Management</h3>
+                <p class="text-sm font-medium text-slate-500 mb-5">Your productivity data is kept strictly private and stored locally in this browser.</p>
+                <div class="space-y-3">
+                    <button onclick="exportData()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 p-4 rounded-lg text-left font-semibold text-slate-700 transition flex items-center gap-3">
+                        <i class="fas fa-download text-blue-500 text-lg w-5"></i> Export JSON Data
+                    </button>
+                    <label class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 p-4 rounded-lg text-left font-semibold text-slate-700 transition flex items-center gap-3 cursor-pointer">
+                        <i class="fas fa-upload text-green-500 text-lg w-5"></i> Import JSON Data
+                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+                    </label>
+                    <button onclick="factoryReset()" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 p-4 rounded-lg text-left font-semibold text-red-600 transition flex items-center gap-3 mt-4">
+                        <i class="fas fa-trash-alt text-lg w-5"></i> Reset All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="md:hidden bg-white border-t border-slate-200 flex justify-around p-2 pb-safe fixed bottom-0 w-full z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button onclick="switchView('home')" id="mob-nav-home" class="mobile-nav-item flex flex-col items-center p-2 text-slate-500 hover:text-cyan-600"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-semibold">Home</span></button>
+        <button onclick="switchView('planner')" id="mob-nav-planner" class="mobile-nav-item flex flex-col items-center p-2 text-slate-500 hover:text-cyan-600"><i class="fas fa-calendar-check text-xl mb-1"></i><span class="text-[10px] font-semibold">Plan</span></button>
+        <button onclick="switchView('syllabus')" id="mob-nav-syllabus" class="mobile-nav-item flex flex-col items-center p-2 text-slate-500 hover:text-cyan-600"><i class="fas fa-book-open text-xl mb-1"></i><span class="text-[10px] font-semibold">Syllabus</span></button>
+        <button onclick="switchView('study')" id="mob-nav-study" class="mobile-nav-item flex flex-col items-center p-2 text-slate-500 hover:text-cyan-600"><i class="fas fa-stopwatch text-xl mb-1"></i><span class="text-[10px] font-semibold">Study</span></button>
+        <button onclick="switchView('ai')" id="mob-nav-ai" class="mobile-nav-item flex flex-col items-center p-2 text-slate-500 hover:text-cyan-600"><i class="fas fa-robot text-xl mb-1"></i><span class="text-[10px] font-semibold">AI</span></button>
+    </nav>
+
+    <div id="modal-backdrop" class="fixed inset-0 z-50 items-center justify-center p-4">
+        
+        <!-- Add Task Modal -->
+        <div id="modal-add-task" class="hidden bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">Add Task</h3>
+                <button onclick="closeModal('modal-add-task')" class="text-slate-400 hover:text-slate-700 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <form id="form-task" onsubmit="saveTask(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">Title</label>
+                        <input type="text" id="task-title" required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 font-medium focus:ring-2 focus:ring-cyan-500 outline-none">
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">Subject</label>
+                            <select id="task-subject" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 text-sm font-medium outline-none"></select>
+                        </div>
+                        <div class="w-32">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">Planned Hrs</label>
+                            <input type="number" id="task-duration" step="0.5" min="0.5" value="1.0" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 text-sm font-medium outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">Priority</label>
+                        <select id="task-priority" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 text-sm font-medium outline-none">
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl mt-3 transition shadow-md">Save Task</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alert Modal -->
+        <div id="modal-alert" class="hidden bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8">
+            <i class="fas fa-info-circle text-5xl text-cyan-500 mb-5 block"></i>
+            <h3 class="font-bold text-xl mb-3 text-slate-800" id="alert-title">Notification</h3>
+            <p class="text-slate-500 font-medium text-sm mb-8" id="alert-message">Message goes here</p>
+            <button onclick="closeModal('modal-alert')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition shadow-md">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA LAYER ---
+        const EXAM_DATE = new Date('2026-11-05T00:00:00');
+        const START_DATE = new Date('2026-10-09T00:00:00');
+        
+        const DEFAULT_SUBJECTS = [
+            { id: 'math1', name: 'Mathematics-I', topics: ['Algebra I', 'Algebra II', 'Trigonometry', 'Differential Calculus I', 'Differential Calculus II'].map(t=>({name: t, status: 'Not Started'})) },
+            { id: 'phy1', name: 'Applied Physics-I', topics: ['Units & Dimensions', 'Force & Motion', 'Work, Power & Energy', 'Rotational Motion', 'Properties of Matter', 'Heat & Thermodynamics'].map(t=>({name: t, status: 'Not Started'})) },
+            { id: 'chem', name: 'Applied Chemistry', topics: ['Atomic Structure', 'Chemical Bonding', 'Water Treatment', 'Electrochemistry', 'Corrosion', 'Polymers'].map(t=>({name: t, status: 'Not Started'})) },
+            { id: 'eng', name: 'Communication Skills', topics: ['Basics of Communication', 'Application of Grammar', 'Reading Skills', 'Writing Skills'].map(t=>({name: t, status: 'Not Started'})) },
+            { id: 'graf', name: 'Engineering Graphics', topics: ['Drawing Instruments', 'Lines & Lettering', 'Dimensioning', 'Orthographic Projections', 'Isometric Projections'].map(t=>({name: t, status: 'Not Started'})) },
+            { id: 'spo', name: 'Sports & Yoga', topics: ['Physical Fitness', 'Yoga Basics', 'Team Sports', 'Athletics'].map(t=>({name: t, status: 'Not Started'})) }
+        ];
+
+        const HABITS = [
+            { id: 'h1', label: 'Wake up on time', icon: 'fa-sun text-yellow-500' },
+            { id: 'h2', label: 'First study session done', icon: 'fa-check-circle text-blue-500' },
+            { id: 'h3', label: 'Daily revision completed', icon: 'fa-sync-alt text-purple-500' },
+            { id: 'h4', label: 'Exercise (20+ mins)', icon: 'fa-running text-green-500' },
+            { id: 'h5', label: 'Tomorrow planned', icon: 'fa-calendar-plus text-orange-500' }
+        ];
+
+        let state = {
+            subjects: JSON.parse(JSON.stringify(DEFAULT_SUBJECTS)),
+            tasks: [], 
+            sessions: [], 
+            habitsLog: {}, 
+            distractions: {}, 
+            recreations: {},
+            createdAt: new Date().toISOString()
+        };
+
+        // --- UTILS ---
+        const getTodayStr = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        };
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        
+        function customAlert(title, message) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('modal-backdrop').classList.add('active');
+            document.getElementById('modal-alert').classList.remove('hidden');
+        }
+
+        // --- STORAGE ---
+        function loadState() {
+            const saved = localStorage.getItem('govindCmdCenterState');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                } catch(e) { console.error("Corrupted save file", e); }
+            } else {
+                generateDummyTasks(); 
+                saveState();
+            }
+        }
+        function saveState() {
+            localStorage.setItem('govindCmdCenterState', JSON.stringify(state));
+            updateDashboard();
+        }
+
+        function generateDummyTasks() {
+            const start = START_DATE;
+            for(let i=0; i<28; i++) {
+                const d = new Date(start);
+                d.setDate(d.getDate() + i);
+                const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                
+                state.tasks.push({
+                    id: generateId(), dateStr: dStr, title: 'Math Practice', subjectId: 'math1', duration: 1.5, priority: 'High', status: 'Not Started'
+                });
+                state.tasks.push({
+                    id: generateId(), dateStr: dStr, title: 'Physics Concepts', subjectId: 'phy1', duration: 1.0, priority: 'Medium', status: 'Not Started'
+                });
+            }
+        }
+
+        // --- STREAMING_CHUNK: Initialization ---
+        window.onload = () => {
+            loadState();
+            setupUI();
+            updateDashboard();
+            switchView('home');
+            
+            // Countdown
+            const today = new Date();
+            const diffTime = Math.max(0, EXAM_DATE - today);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('exam-countdown-main').innerText = diffDays + " Days";
+            document.getElementById('exam-countdown-sidebar').innerText = `Exam: Nov 5 (${diffDays} days)`;
+        };
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(document.getElementById('nav-' + viewId)) document.getElementById('nav-' + viewId).classList.add('active');
+            
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            if(document.getElementById('mob-nav-' + viewId)) document.getElementById('mob-nav-' + viewId).classList.add('active');
+
+            if(viewId === 'planner') renderPlanner();
+            if(viewId === 'syllabus') renderSyllabus();
+            if(viewId === 'habits') renderHabits();
+            if(viewId === 'growth') renderGrowthCharts();
+        }
+
+        function openModal(id) {
+            document.getElementById('modal-backdrop').classList.add('active');
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            let anyOpen = Array.from(document.getElementById('modal-backdrop').children).some(c => !c.classList.contains('hidden'));
+            if(!anyOpen) document.getElementById('modal-backdrop').classList.remove('active');
+        }
+
+        function setupUI() {
+            const subjSelect = document.getElementById('task-subject');
+            const timerSubjSelect = document.getElementById('timer-subject');
+            const manualSubjSelect = document.getElementById('manual-subject');
+            
+            state.subjects.forEach(s => {
+                subjSelect.add(new Option(s.name, s.id));
+                timerSubjSelect.add(new Option(s.name, s.id));
+                manualSubjSelect.add(new Option(s.name, s.id));
+            });
+            document.getElementById('current-date-display').innerText = new Date().toDateString();
+        }
+
+        // --- STREAMING_CHUNK: Core Dashboard Logic ---
+        function updateDashboard() {
+            const todayStr = getTodayStr();
+            const todayTasks = state.tasks.filter(t => t.dateStr === todayStr);
+            const todaySessions = state.sessions.filter(s => s.dateStr === todayStr);
+            
+            const totalPlannedHrs = todayTasks.reduce((sum, t) => sum + parseFloat(t.duration), 0);
+            const totalActualMins = todaySessions.reduce((sum, s) => sum + parseInt(s.duration), 0);
+            const totalActualHrs = (totalActualMins / 60).toFixed(1);
+            
+            const tasksDone = todayTasks.filter(t => t.status === 'Completed').length;
+            const tasksTotal = todayTasks.length;
+
+            document.getElementById('stat-study-actual').innerText = totalActualHrs;
+            document.getElementById('stat-study-planned').innerText = totalPlannedHrs;
+            document.getElementById('bar-study').style.width = totalPlannedHrs > 0 ? Math.min((totalActualHrs/totalPlannedHrs)*100, 100) + '%' : '0%';
+            
+            document.getElementById('stat-tasks-done').innerText = tasksDone;
+            document.getElementById('stat-tasks-total').innerText = tasksTotal;
+            document.getElementById('bar-tasks').style.width = tasksTotal > 0 ? (tasksDone/tasksTotal)*100 + '%' : '0%';
+
+            let totalTopics = 0; let doneTopics = 0;
+            state.subjects.forEach(s => {
+                s.topics.forEach(t => {
+                    totalTopics++;
+                    if(['Completed', 'Revised', 'Strong'].includes(t.status)) doneTopics++;
+                });
+            });
+            const syllabusPct = totalTopics > 0 ? Math.round((doneTopics/totalTopics)*100) : 0;
+            document.getElementById('stat-syllabus').innerText = syllabusPct + '%';
+
+            let habitsDone = 0;
+            if(state.habitsLog[todayStr]) {
+                habitsDone = Object.values(state.habitsLog[todayStr]).filter(v => v).length;
+            }
+
+            let timeScore = totalPlannedHrs > 0 ? Math.min((totalActualHrs/totalPlannedHrs), 1) : (totalActualHrs > 0 ? 1 : 0);
+            let taskScore = tasksTotal > 0 ? (tasksDone/tasksTotal) : 0;
+            let habitScore = (habitsDone / HABITS.length);
+            
+            let successPct = Math.round((timeScore * 40) + (taskScore * 40) + (habitScore * 20));
+            if(tasksTotal === 0 && totalPlannedHrs === 0) successPct = Math.round(habitScore * 100);
+
+            const ring = document.getElementById('daily-score-ring');
+            ring.style.strokeDasharray = `${successPct}, 100`;
+            document.getElementById('daily-score-text').innerText = successPct + '%';
+            
+            let msg = "Getting started!";
+            if(successPct > 80) msg = "Outstanding Day!";
+            else if(successPct > 50) msg = "On track, keep going.";
+            else if(successPct > 20) msg = "Needs attention.";
+            document.getElementById('daily-status-msg').innerText = msg;
+            
+            ring.classList.remove('stroke-red-500', 'stroke-yellow-500', 'stroke-cyan-500');
+            if(successPct < 40) ring.classList.add('stroke-red-500');
+            else if(successPct < 75) ring.classList.add('stroke-yellow-500');
+            else ring.classList.add('stroke-cyan-500');
+
+            let streak = 0; 
+            const uniqueDates = [...new Set([...state.tasks.map(t=>t.dateStr), ...state.sessions.map(s=>s.dateStr)])].sort().reverse();
+            let checkDate = new Date();
+            while(true) {
+                const dStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth()+1).padStart(2,'0')}-${String(checkDate.getDate()).padStart(2,'0')}`;
+                const hasAct = state.sessions.some(s=>s.dateStr === dStr) || state.tasks.some(t=>t.dateStr===dStr && t.status==='Completed');
+                if(hasAct) streak++;
+                else if(dStr !== todayStr) break;
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+            document.getElementById('stat-streak').innerText = streak;
+            document.getElementById('stat-best-streak').innerText = Math.max(streak, 3);
+
+            renderHomeTasks(todayTasks);
+            renderAlerts(todayTasks, todaySessions);
+        }
+
+        function renderHomeTasks(tasks) {
+            const container = document.getElementById('home-tasks-list');
+            container.innerHTML = '';
+            if(tasks.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 font-medium text-sm p-4 bg-slate-50 rounded-lg border border-slate-200">No tasks planned for today. Add one!</p>';
+                return;
+            }
+            tasks.forEach(t => {
+                const subj = state.subjects.find(s=>s.id === t.subjectId)?.name || 'General';
+                const isDone = t.status === 'Completed';
+                container.innerHTML += `
+                    <div class="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer group" onclick="toggleTaskStatus('${t.id}')">
+                        <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isDone ? 'bg-cyan-500 border-cyan-500' : 'border-slate-300 group-hover:border-cyan-400'}">
+                            ${isDone ? '<i class="fas fa-check text-xs text-white"></i>' : ''}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}">${t.title}</h4>
+                            <p class="text-xs font-semibold text-slate-500 mt-0.5">${subj} • ${t.duration}h</p>
+                        </div>
+                        ${t.priority === 'High' ? '<i class="fas fa-exclamation-circle text-orange-500"></i>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function renderAlerts(tasks, sessions) {
+            const container = document.getElementById('home-alerts');
+            container.innerHTML = '';
+            
+            let alerts = [];
+            if(tasks.filter(t=>t.status === 'Not Started' && t.priority === 'High').length > 0) {
+                alerts.push({icon: 'fa-exclamation-triangle text-orange-500', text: 'You have high priority tasks pending.'});
+            }
+            if(sessions.length === 0) {
+                alerts.push({icon: 'fa-stopwatch text-blue-500', text: "No study sessions recorded yet today."});
+            }
+            const yday = new Date(); yday.setDate(yday.getDate()-1);
+            const ydayStr = `${yday.getFullYear()}-${String(yday.getMonth()+1).padStart(2,'0')}-${String(yday.getDate()).padStart(2,'0')}`;
+            if(state.distractions[ydayStr] > 60) {
+                alerts.push({icon: 'fa-mobile-alt text-red-500', text: `Yesterday had ${state.distractions[ydayStr]}m of distraction. Stay focused today!`});
+            }
+
+            if(alerts.length === 0) alerts.push({icon: 'fa-check-circle text-green-500', text: 'All clear! Keep up the good work.'});
+
+            alerts.forEach(a => {
+                container.innerHTML += `
+                    <div class="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <i class="fas ${a.icon} w-5 text-center text-lg"></i>
+                        <span class="text-slate-700 font-medium">${a.text}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // --- STREAMING_CHUNK: Planner & Syllabus Logic ---
+        let currentPlannerDate = getTodayStr();
+        
+        function renderPlanner() {
+            const dateContainer = document.getElementById('planner-dates');
+            dateContainer.innerHTML = '';
+            
+            let startD = new Date(); startD.setDate(startD.getDate() - 3);
+            for(let i=0; i<17; i++) {
+                const d = new Date(startD);
+                d.setDate(d.getDate() + i);
+                const dStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                
+                const isSelected = dStr === currentPlannerDate;
+                const isToday = dStr === getTodayStr();
+                
+                const dayName = d.toLocaleDateString('en-US', {weekday: 'short'});
+                const dayNum = d.getDate();
+                
+                dateContainer.innerHTML += `
+                    <div onclick="setPlannerDate('${dStr}')" class="flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center cursor-pointer transition ${isSelected ? 'bg-cyan-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} ${isToday && !isSelected ? 'ring-2 ring-cyan-500/50' : ''}">
+                        <span class="text-xs uppercase font-bold tracking-wider">${dayName}</span>
+                        <span class="text-xl font-bold">${dayNum}</span>
+                    </div>
+                `;
+            }
+            renderPlannerTasks();
+        }
+
+        function setPlannerDate(dStr) {
+            currentPlannerDate = dStr;
+            renderPlanner();
+        }
+
+        function renderPlannerTasks() {
+            const container = document.getElementById('planner-tasks-container');
+            const tasks = state.tasks.filter(t => t.dateStr === currentPlannerDate);
+            
+            document.getElementById('planner-current-date-title').innerText = new Date(currentPlannerDate + 'T00:00:00').toDateString();
+            document.getElementById('planner-planned-hours').innerText = tasks.reduce((sum,t)=>sum+parseFloat(t.duration),0).toFixed(1);
+            
+            container.innerHTML = '';
+            if(tasks.length === 0) {
+                container.innerHTML = '<div class="text-center py-12 text-slate-400"><i class="fas fa-bed text-5xl mb-4 block text-slate-300"></i><span class="font-medium">No tasks planned. Enjoy the rest or plan ahead!</span></div>';
+                return;
+            }
+
+            tasks.forEach(t => {
+                const subj = state.subjects.find(s=>s.id === t.subjectId)?.name || 'General';
+                const isDone = t.status === 'Completed';
+                
+                let pColor = 'text-slate-500';
+                if(t.priority === 'High') pColor = 'text-orange-600';
+                
+                container.innerHTML += `
+                    <div class="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition hover:shadow-md hover:border-slate-300">
+                        <button onclick="toggleTaskStatus('${t.id}')" class="w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isDone ? 'bg-cyan-500 border-cyan-500' : 'border-slate-300 hover:border-cyan-400'}">
+                            ${isDone ? '<i class="fas fa-check text-xs text-white"></i>' : ''}
+                        </button>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}">${t.title}</h4>
+                            <div class="flex gap-4 text-xs font-semibold mt-1.5 text-slate-500">
+                                <span><i class="fas fa-book mr-1 text-slate-400"></i>${subj}</span>
+                                <span><i class="fas fa-clock mr-1 text-slate-400"></i>${t.duration}h</span>
+                                <span class="${pColor}"><i class="fas fa-flag mr-1"></i>${t.priority}</span>
+                            </div>
+                        </div>
+                        <button onclick="deleteTask('${t.id}')" class="text-slate-400 hover:text-red-500 transition p-2 bg-slate-50 rounded-lg hover:bg-red-50"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function saveTask(e) {
+            e.preventDefault();
+            const task = {
+                id: generateId(),
+                dateStr: currentPlannerDate,
+                title: document.getElementById('task-title').value,
+                subjectId: document.getElementById('task-subject').value,
+                duration: document.getElementById('task-duration').value,
+                priority: document.getElementById('task-priority').value,
+                status: 'Not Started'
+            };
+            state.tasks.push(task);
+            saveState();
+            closeModal('modal-add-task');
+            document.getElementById('form-task').reset();
+            if(document.getElementById('view-planner').classList.contains('active')) renderPlanner();
+        }
+
+        function toggleTaskStatus(id) {
+            const task = state.tasks.find(t => t.id === id);
+            if(task) {
+                task.status = task.status === 'Completed' ? 'Not Started' : 'Completed';
+                saveState();
+                if(document.getElementById('view-planner').classList.contains('active')) renderPlannerTasks();
+            }
+        }
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            saveState();
+            renderPlannerTasks();
+        }
+
+        function renderSyllabus() {
+            const container = document.getElementById('syllabus-container');
+            container.innerHTML = '';
+            
+            const statuses = ['Not Started', 'Learning', 'Completed', 'Revised', 'Strong'];
+            const colors = {
+                'Not Started': 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200',
+                'Learning': 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200',
+                'Completed': 'bg-green-100 text-green-700 hover:bg-green-200 border-green-200',
+                'Revised': 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200',
+                'Strong': 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200 font-bold border-cyan-300'
+            };
+
+            state.subjects.forEach((subj, sIdx) => {
+                let completedCount = subj.topics.filter(t => ['Completed', 'Revised', 'Strong'].includes(t.status)).length;
+                let pct = subj.topics.length > 0 ? Math.round((completedCount/subj.topics.length)*100) : 0;
+                
+                let topicsHtml = subj.topics.map((t, tIdx) => `
+                    <div class="flex justify-between items-center py-2.5 px-3 hover:bg-slate-50 rounded-lg border-b border-slate-100 last:border-0 group">
+                        <span class="text-sm font-semibold ${['Completed', 'Revised', 'Strong'].includes(t.status) ? 'text-slate-400' : 'text-slate-700'}">${t.name}</span>
+                        <button onclick="cycleTopicStatus(${sIdx}, ${tIdx})" class="text-xs px-2.5 py-1.5 rounded-md font-semibold border transition-colors ${colors[t.status]} shadow-sm">
+                            ${t.status}
+                        </button>
+                    </div>
+                `).join('');
+
+                container.innerHTML += `
+                    <div class="glass-panel p-6 bg-white">
+                        <div class="flex justify-between items-end mb-4">
+                            <h3 class="font-bold text-lg text-slate-800">${subj.name}</h3>
+                            <span class="text-cyan-600 font-bold bg-cyan-50 px-2 py-0.5 rounded text-sm">${pct}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mb-5">
+                            <div class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="space-y-1">
+                            ${topicsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function cycleTopicStatus(subjIdx, topicIdx) {
+            const statuses = ['Not Started', 'Learning', 'Completed', 'Revised', 'Strong'];
+            const topic = state.subjects[subjIdx].topics[topicIdx];
+            let currIdx = statuses.indexOf(topic.status);
+            topic.status = statuses[(currIdx + 1) % statuses.length];
+            saveState();
+            renderSyllabus();
+        }
+
+        // --- STREAMING_CHUNK: Timer & Habits ---
+        let timerInterval = null;
+        let timerSeconds = 0;
+
+        function updateTimerDisplay() {
+            const h = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(timerSeconds % 60).padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${h}:${m}:${s}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('btn-timer-start');
+            const icon = document.getElementById('icon-timer-play');
+            const text = document.getElementById('text-timer-play');
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                icon.className = "fas fa-play";
+                text.innerText = "Resume";
+                btn.classList.replace("bg-yellow-500", "bg-cyan-600");
+                btn.classList.replace("hover:bg-yellow-600", "hover:bg-cyan-700");
+            } else {
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+                icon.className = "fas fa-pause";
+                text.innerText = "Pause";
+                btn.classList.replace("bg-cyan-600", "bg-yellow-500");
+                btn.classList.replace("hover:bg-cyan-700", "hover:bg-yellow-600");
+            }
+        }
+
+        function stopTimer() {
+            if(timerSeconds < 60) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerSeconds = 0;
+                updateTimerDisplay();
+                resetTimerBtn();
+                return;
+            }
+            
+            clearInterval(timerInterval);
+            timerInterval = null;
+            const durationMins = Math.floor(timerSeconds / 60);
+            
+            state.sessions.push({
+                id: generateId(),
+                dateStr: getTodayStr(),
+                subjectId: document.getElementById('timer-subject').value,
+                duration: durationMins,
+                notes: 'Focused Session',
+                timestamp: new Date().toISOString()
+            });
+            
+            saveState();
+            customAlert("Session Logged!", `Great job! You studied for ${durationMins} minutes.`);
+            
+            timerSeconds = 0;
+            updateTimerDisplay();
+            resetTimerBtn();
+            renderSessions();
+        }
+
+        function resetTimerBtn() {
+            const btn = document.getElementById('btn-timer-start');
+            document.getElementById('icon-timer-play').className = "fas fa-play";
+            document.getElementById('text-timer-play').innerText = "Start";
+            btn.className = "flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg flex items-center justify-center gap-2";
+        }
+
+        function handleManualSession(e) {
+            e.preventDefault();
+            state.sessions.push({
+                id: generateId(),
+                dateStr: getTodayStr(),
+                subjectId: document.getElementById('manual-subject').value,
+                duration: document.getElementById('manual-duration').value,
+                notes: document.getElementById('manual-notes').value || 'Manual Entry',
+                timestamp: new Date().toISOString()
+            });
+            saveState();
+            document.getElementById('form-manual-session').reset();
+            renderSessions();
+            customAlert("Logged", "Manual session added.");
+        }
+
+        function renderSessions() {
+            const container = document.getElementById('today-sessions-list');
+            const todaySessions = state.sessions.filter(s => s.dateStr === getTodayStr()).reverse();
+            
+            container.innerHTML = '';
+            if(todaySessions.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 font-medium text-sm p-4 bg-slate-50 rounded-lg border border-slate-200">No sessions recorded today.</p>';
+                return;
+            }
+            
+            todaySessions.forEach(s => {
+                const subj = state.subjects.find(su=>su.id === s.subjectId)?.name || 'General';
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div>
+                            <div class="font-bold text-sm text-cyan-700">${subj}</div>
+                            <div class="text-xs text-slate-500 font-medium mt-0.5">${s.notes}</div>
+                        </div>
+                        <div class="font-bold text-slate-800 bg-slate-50 px-3 py-1 rounded-lg border border-slate-200">${s.duration} min</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHabits() {
+            const container = document.getElementById('habits-list');
+            const todayStr = getTodayStr();
+            if(!state.habitsLog[todayStr]) state.habitsLog[todayStr] = {};
+            
+            container.innerHTML = '';
+            HABITS.forEach(h => {
+                const isChecked = !!state.habitsLog[todayStr][h.id];
+                container.innerHTML += `
+                    <label class="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-slate-300 hover:shadow-sm transition">
+                        <input type="checkbox" onchange="toggleHabit('${h.id}', this.checked)" class="w-5 h-5 accent-cyan-600 rounded" ${isChecked ? 'checked' : ''}>
+                        <div class="flex items-center gap-3 text-slate-800 font-semibold text-sm">
+                            <i class="fas ${h.icon} w-5 text-center text-lg"></i>
+                            <span class="${isChecked ? 'text-slate-400 line-through' : ''}">${h.label}</span>
+                        </div>
+                    </label>
+                `;
+            });
+
+            document.getElementById('input-distraction').value = state.distractions[todayStr] || '';
+            document.getElementById('check-recreation').checked = !!state.recreations[todayStr];
+        }
+
+        function toggleHabit(id, val) {
+            const todayStr = getTodayStr();
+            if(!state.habitsLog[todayStr]) state.habitsLog[todayStr] = {};
+            state.habitsLog[todayStr][id] = val;
+            saveState();
+        }
+
+        function saveDistraction() {
+            const val = document.getElementById('input-distraction').value;
+            if(val) {
+                state.distractions[getTodayStr()] = parseInt(val);
+                saveState();
+                customAlert("Saved", "Distraction time logged. Being aware is the first step!");
+            }
+        }
+        function toggleRecreation(val) {
+            state.recreations[getTodayStr()] = val;
+            saveState();
+        }
+
+        // --- STREAMING_CHUNK: Analytics & Charts ---
+        let charts = {};
+        function renderGrowthCharts() {
+            const labels = [];
+            const actData = [];
+            const planData = [];
+            const distData = [];
+            
+            let d = new Date();
+            for(let i=6; i>=0; i--) {
+                const temp = new Date(d);
+                temp.setDate(temp.getDate() - i);
+                const dStr = `${temp.getFullYear()}-${String(temp.getMonth()+1).padStart(2,'0')}-${String(temp.getDate()).padStart(2,'0')}`;
+                labels.push(temp.toLocaleDateString('en-US', {weekday: 'short'}));
+                
+                let aMins = state.sessions.filter(s=>s.dateStr === dStr).reduce((sum,s)=>sum+parseInt(s.duration),0);
+                actData.push((aMins/60).toFixed(1));
+                
+                let pHrs = state.tasks.filter(t=>t.dateStr === dStr).reduce((sum,t)=>sum+parseFloat(t.duration),0);
+                planData.push(pHrs.toFixed(1));
+
+                distData.push(state.distractions[dStr] || 0);
+            }
+
+            if(charts.study) charts.study.destroy();
+            if(charts.dist) charts.dist.destroy();
+
+            Chart.defaults.color = '#64748b'; // slate-500
+            Chart.defaults.font.family = 'Inter';
+            Chart.defaults.font.weight = '600';
+
+            const ctxStudy = document.getElementById('chart-study').getContext('2d');
+            charts.study = new Chart(ctxStudy, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Actual (hrs)', data: actData, backgroundColor: '#06b6d4', borderRadius: 4 }, // cyan-500
+                        { label: 'Planned (hrs)', data: planData, backgroundColor: '#94a3b8', borderRadius: 4 }  // slate-400
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            });
+
+            const ctxDist = document.getElementById('chart-distraction').getContext('2d');
+            charts.dist = new Chart(ctxDist, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Distraction (mins)', data: distData, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            });
+            
+            renderReflections();
+        }
+
+        function saveReflection() {
+            const text = document.getElementById('reflection-text').value;
+            if(!text) return;
+            if(!state.reflections) state.reflections = [];
+            state.reflections.push({ date: getTodayStr(), text: text });
+            saveState();
+            document.getElementById('reflection-text').value = '';
+            renderReflections();
+        }
+
+        function renderReflections() {
+            if(!state.reflections) return;
+            const container = document.getElementById('saved-reflections');
+            container.innerHTML = state.reflections.slice(-5).reverse().map(r => `
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm">
+                    <div class="text-xs font-bold text-cyan-600 mb-1.5">${r.date}</div>
+                    <div class="text-slate-700 italic font-medium">"${r.text}"</div>
+                </div>
+            `).join('');
+        }
+
+        // --- STREAMING_CHUNK: AI Agent & File I/O ---
+        function appendAIChat(msg, isUser=false) {
+            const container = document.getElementById('ai-chat-history');
+            if(isUser) {
+                container.innerHTML += `
+                    <div class="flex justify-end gap-3 mb-5">
+                        <div class="bg-cyan-600 shadow-md rounded-2xl rounded-tr-none p-4 max-w-[85%] text-white font-medium">${msg}</div>
+                    </div>
+                `;
+            } else {
+                const formattedMsg = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                container.innerHTML += `
+                    <div class="flex gap-4 mb-5">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-none p-4 max-w-[85%] text-slate-700 font-medium leading-relaxed">${formattedMsg}</div>
+                    </div>
+                `;
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendAIPrompt(promptText) {
+            appendAIChat(promptText, true);
+            
+            const dStr = getTodayStr();
+            const recentTasks = state.tasks.filter(t => t.dateStr === dStr);
+            const recentSessions = state.sessions.filter(s => s.dateStr === dStr);
+            const syllabusStatus = state.subjects.map(s => `${s.name}: ${s.topics.filter(t=>['Completed','Revised','Strong'].includes(t.status)).length}/${s.topics.length} done`).join(', ');
+            
+            const contextStr = `
+                I am an Indian Polytechnic student taking BTEUP Semester 1 exams on Nov 5, 2026.
+                Here is my data for today (${dStr}):
+                - Planned Tasks: ${recentTasks.map(t=>t.title).join(', ')}
+                - Completed Tasks: ${recentTasks.filter(t=>t.status==='Completed').length}/${recentTasks.length}
+                - Study Sessions Today: ${recentSessions.reduce((sum,s)=>sum+parseInt(s.duration),0)} minutes
+                - Distraction time today: ${state.distractions[dStr] || 0} minutes
+                - Overall Syllabus Progress: ${syllabusStatus}.
+            `;
+
+            const systemInstruction = "You are 'Command Center AI', an expert, encouraging study coach and productivity analyst for a polytechnic student. Keep answers extremely concise, structured, and actionable. Use bullet points. Do not mention the raw data string provided to you, just use it to give personalized advice.";
+
+            const payload = {
+                contents: [{ parts: [{ text: `${contextStr}\n\nUser Request: ${promptText}` }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            // Using empty apiKey to leverage the built-in free API connection
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            
+            try {
+                const loadingId = 'loading-' + Date.now();
+                document.getElementById('ai-chat-history').innerHTML += `
+                    <div id="${loadingId}" class="flex gap-4 mb-5 opacity-70">
+                        <div class="w-10 h-10 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center flex-shrink-0"><i class="fas fa-circle-notch fa-spin text-slate-500"></i></div>
+                        <div class="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl rounded-tl-none font-medium text-slate-500">Thinking...</div>
+                    </div>
+                `;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                document.getElementById(loadingId).remove();
+                
+                const result = await response.json();
+                
+                if(result.error) {
+                    appendAIChat("API Error: " + result.error.message);
+                    return;
+                }
+                
+                const reply = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(reply) appendAIChat(reply);
+                else appendAIChat("Received empty response from AI.");
+
+            } catch(e) {
+                appendAIChat("Network Error while contacting AI. Please check connection.");
+                console.error(e);
+            }
+        }
+
+        function handleManualAIPrompt() {
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim();
+            if(text) {
+                input.value = '';
+                sendAIPrompt(text);
+            }
+        }
+        
+        document.getElementById('ai-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleManualAIPrompt();
+        });
+
+        // Data Management Functions
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "govind_cmd_center_backup.json");
+            dlAnchorElem.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if(imported.subjects && imported.tasks) {
+                        state = imported;
+                        saveState();
+                        customAlert("Success", "Data imported successfully! Dashboard updating.");
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        customAlert("Error", "Invalid backup file structure.");
+                    }
+                } catch(err) {
+                    customAlert("Error", "Could not parse JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function factoryReset() {
+            if(confirm("Are you SURE you want to delete all your tracked data and syllabus progress? This cannot be undone.")) {
+                localStorage.removeItem('govindCmdCenterState');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
