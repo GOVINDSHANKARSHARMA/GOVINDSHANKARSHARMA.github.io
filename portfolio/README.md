@@ -1,0 +1,1 @@
+Engineering portfolio files are provided in the downloadable govind-portfolio.zip in the ChatGPT conversation. Extract it and upload the files into the repository root to publish. Replace the resume and contact form placeholders first. The existing root index.html has not been overwritten.
